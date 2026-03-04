@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edible Onset &amp; Duration Timeline | Mood</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F4F1EC;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+
+    .widget-wrapper {
+      width: 100%;
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    .widget-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      border: 1px solid rgba(27,58,47,0.08);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(27,58,47,0.06), 0 1px 4px rgba(27,58,47,0.04);
+    }
+
+    .widget-header {
+      padding: 28px 28px 20px;
+      text-align: center;
+    }
+
+    .widget-header h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      color: #1B3A2F;
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .widget-header p {
+      color: #7A8B82;
+      font-size: 13px;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .dose-tabs {
+      display: flex;
+      padding: 0 20px;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .dose-tabs::-webkit-scrollbar { display: none; }
+
+    .dose-tab {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(27,58,47,0.1);
+      background: transparent;
+      color: #7A8B82;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .dose-tab:hover {
+      border-color: rgba(27,58,47,0.25);
+      color: #4A5D53;
+    }
+
+    .dose-tab.active {
+      background: rgba(27,58,47,0.08);
+      border-color: rgba(27,58,47,0.2);
+      color: #1B3A2F;
+    }
+
+    .dose-tab.warning.active {
+      border-color: rgba(194,85,58,0.3);
+      color: #C2553A;
+      background: rgba(194,85,58,0.06);
+    }
+
+    .timeline-content {
+      padding: 24px 28px 28px;
+    }
+
+    .timeline-visual {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .hour-axis {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 0 2px;
+    }
+
+    .hour-axis span {
+      color: #A0ADA6;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .timeline-bars {
+      position: relative;
+      height: 64px;
+      background: #F8F6F2;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .tl-phase {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .tl-phase-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #1B3A2F;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+    }
+
+    .phase-onset {
+      background: rgba(27,58,47,0.08);
+      border: 1px solid rgba(27,58,47,0.12);
+    }
+
+    .phase-peak {
+      border: 1px solid rgba(27,58,47,0.15);
+    }
+
+    .phase-comedown {
+      background: rgba(27,58,47,0.04);
+      border: 1px solid rgba(27,58,47,0.08);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: #F8F6F2;
+      border: 1px solid rgba(27,58,47,0.05);
+      border-radius: 12px;
+      padding: 16px 12px;
+      text-align: center;
+      transition: all 0.4s ease;
+    }
+
+    .stat-icon {
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      color: #1B3A2F;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 2px;
+      transition: color 0.3s ease;
+    }
+
+    .stat-label {
+      color: #A0ADA6;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .comparison-note {
+      background: #F8F6F2;
+      border: 1px solid rgba(27,58,47,0.06);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .comparison-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .comparison-text {
+      color: #4A5D53;
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .comparison-text strong {
+      color: #1B3A2F;
+    }
+
+    @media (max-width: 420px) {
+      .widget-header h2 { font-size: 19px; }
+      .dose-tab { padding: 6px 11px; font-size: 12px; }
+      .stats-grid { gap: 6px; }
+      .stat-card { padding: 12px 8px; }
+      .stat-value { font-size: 14px; }
+      .tl-phase-label { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="widget-wrapper">
+    <div class="widget-card">
+      <div class="widget-header">
+        <h2>Edible Effects Timeline</h2>
+        <p>Select an amount to see onset, peak, and total duration</p>
+      </div>
+
+      <div class="dose-tabs" id="doseTabs"></div>
+
+      <div class="timeline-content">
+        <div class="timeline-visual">
+          <div class="hour-axis" id="hourAxis"></div>
+          <div class="timeline-bars" id="timelineBars"></div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="comparison-note" id="comparisonNote">
+          <span class="comparison-icon">🌿</span>
+          <p class="comparison-text" id="comparisonText"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const data = [
+      {
+        label: "2.5\u20135mg",
+        onsetStart: 0.75, onsetEnd: 1.5,
+        peakStart: 1.5, peakEnd: 3,
+        totalEnd: 5,
+        maxHours: 6,
+        onset: "45\u201390 min",
+        peak: "2\u20133 hrs",
+        total: "3\u20135 hrs",
+        peakBg: "rgba(27,58,47,0.12)",
+        peakBorder: "rgba(27,58,47,0.18)",
+        note: "At this amount, most people feel a <strong>gentle lift</strong> similar to a glass of wine. Great for first-timers or daytime use with minimal impairment.",
+        color: "#1B3A2F",
+        isWarning: false
+      },
+      {
+        label: "5\u201310mg",
+        onsetStart: 0.5, onsetEnd: 1.5,
+        peakStart: 1.5, peakEnd: 3,
+        totalEnd: 6,
+        maxHours: 7,
+        onset: "30\u201390 min",
+        peak: "2\u20133 hrs",
+        total: "4\u20136 hrs",
+        peakBg: "rgba(42,92,71,0.12)",
+        peakBorder: "rgba(42,92,71,0.2)",
+        note: "Considered a <strong>standard amount</strong> by most cannabis education resources. Expect noticeable euphoria and heightened senses while still functioning.",
+        color: "#2A5C47",
+        isWarning: false
+      },
+      {
+        label: "10\u201320mg",
+        onsetStart: 0.5, onsetEnd: 1,
+        peakStart: 1, peakEnd: 4,
+        totalEnd: 8,
+        maxHours: 9,
+        onset: "30\u201360 min",
+        peak: "2\u20134 hrs",
+        total: "5\u20138 hrs",
+        peakBg: "rgba(212,160,74,0.12)",
+        peakBorder: "rgba(212,160,74,0.25)",
+        note: "Effects become <strong>significantly stronger</strong> here. Deep relaxation and possible couchlock. Best for evenings when responsibilities are minimal.",
+        color: "#7A6832",
+        isWarning: false
+      },
+      {
+        label: "20\u201330mg",
+        onsetStart: 0.5, onsetEnd: 1,
+        peakStart: 1, peakEnd: 4,
+        totalEnd: 10,
+        maxHours: 11,
+        onset: "30\u201360 min",
+        peak: "2\u20134 hrs",
+        total: "6\u201310 hrs",
+        peakBg: "rgba(166,107,46,0.12)",
+        peakBorder: "rgba(166,107,46,0.25)",
+        note: "This is <strong>Mood\u2019s strongest gummy range</strong>. Heavy effects on body and mind. Excellent for experienced users seeking immersive experiences.",
+        color: "#A66B2E",
+        isWarning: false
+      },
+      {
+        label: "50\u2013100mg",
+        onsetStart: 0.5, onsetEnd: 1.5,
+        peakStart: 1.5, peakEnd: 5,
+        totalEnd: 12,
+        maxHours: 13,
+        onset: "30\u201390 min",
+        peak: "3\u20135 hrs",
+        total: "8\u201312+ hrs",
+        peakBg: "rgba(194,85,58,0.1)",
+        peakBorder: "rgba(194,85,58,0.2)",
+        note: "\u26A0\uFE0F <strong>Overconsumption zone.</strong> Overwhelming for most people. Effects can linger into the next day. Not recommended unless you have extremely built-up tolerance.",
+        color: "#C2553A",
+        isWarning: true
+      }
+    ];
+
+    let activeIndex = 0;
+
+    function buildTabs() {
+      const container = document.getElementById("doseTabs");
+      data.forEach((d, i) => {
+        const tab = document.createElement("button");
+        tab.className = "dose-tab" + (i === 0 ? " active" : "") + (d.isWarning ? " warning" : "");
+        tab.textContent = d.label;
+        tab.addEventListener("click", () => selectDose(i));
+        container.appendChild(tab);
+      });
+    }
+
+    function selectDose(i) {
+      activeIndex = i;
+      document.querySelectorAll(".dose-tab").forEach((t, idx) => {
+        let cls = "dose-tab";
+        if (idx === i) cls += " active";
+        if (data[idx].isWarning) cls += " warning";
+        t.className = cls;
+      });
+      updateTimeline();
+    }
+
+    function updateTimeline() {
+      const d = data[activeIndex];
+      const maxH = d.maxHours;
+
+      // Hour axis
+      const axisEl = document.getElementById("hourAxis");
+      axisEl.innerHTML = "";
+      const step = Math.ceil(maxH / 6);
+      for (let h = 0; h <= maxH; h += step) {
+        const sp = document.createElement("span");
+        sp.textContent = h + "h";
+        axisEl.appendChild(sp);
+      }
+
+      // Timeline bars
+      const bars = document.getElementById("timelineBars");
+      bars.innerHTML = "";
+
+      function pct(val) { return (val / maxH * 100).toFixed(1) + "%"; }
+
+      // Onset
+      const onset = document.createElement("div");
+      onset.className = "tl-phase phase-onset";
+      onset.style.left = pct(d.onsetStart);
+      onset.style.width = pct(d.onsetEnd - d.onsetStart);
+      onset.innerHTML = '<span class="tl-phase-label">Onset</span>';
+      bars.appendChild(onset);
+
+      // Peak
+      const peak = document.createElement("div");
+      peak.className = "tl-phase phase-peak";
+      peak.style.left = pct(d.peakStart);
+      peak.style.width = pct(d.peakEnd - d.peakStart);
+      peak.style.background = d.peakBg;
+      peak.style.borderColor = d.peakBorder;
+      peak.innerHTML = '<span class="tl-phase-label">Peak</span>';
+      bars.appendChild(peak);
+
+      // Comedown
+      const come = document.createElement("div");
+      come.className = "tl-phase phase-comedown";
+      come.style.left = pct(d.peakEnd);
+      come.style.width = pct(d.totalEnd - d.peakEnd);
+      come.innerHTML = '<span class="tl-phase-label">Wind Down</span>';
+      bars.appendChild(come);
+
+      // Stats
+      const statsGrid = document.getElementById("statsGrid");
+      statsGrid.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-icon">\u23F1\uFE0F</div>
+          <div class="stat-value" style="color: ${d.color}">${d.onset}</div>
+          <div class="stat-label">Onset</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">\uD83D\uDD3A</div>
+          <div class="stat-value" style="color: ${d.color}">${d.peak}</div>
+          <div class="stat-label">Peak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">\uD83D\uDD50</div>
+          <div class="stat-value" style="color: ${d.color}">${d.total}</div>
+          <div class="stat-label">Total</div>
+        </div>
+      `;
+
+      // Comparison note
+      document.getElementById("comparisonText").innerHTML = d.note;
+    }
+
+    buildTabs();
+    updateTimeline();
+  </script>
+</body>
+</html>
